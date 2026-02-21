@@ -1,0 +1,59 @@
+% Generate Figure 3 main results
+% Created on 20260210 by Max B Wang
+
+%%
+subjList={'EP1117','EP1109','EP1111','EP1120','EP1124','EP1142','EP1133',...
+    'EP1135','EP1137','EP1160','EP1149','EP1136','EP1163','EP1155','EP1165',...
+    'EP1170','EP1173','EP1166','EP1169','EP1188'};
+
+load('Data/Fig3_IntermediateData.mat','displacementList','distanceList',...
+    'displacementList_Euc','distanceList_Euc',...
+    'displacementListState_Euc','distanceListState_Euc');
+
+%%
+displacementMeans=zeros(length(subjList),1);
+displacementSE=zeros(length(subjList),1);
+
+distanceMeans=zeros(length(subjList),1);
+distanceSE=zeros(length(subjList),1);
+
+distanceStateMeans=zeros(length(subjList),1);
+distanceStateSE=zeros(length(subjList),1);
+
+displacementStateMeans=zeros(length(subjList),1);
+displacementStateSE=zeros(length(subjList),1);
+
+for sInd=1:length(subjList)
+    displacementMeans(sInd)=nanmean(displacementList_Euc{sInd});
+    displacementSE(sInd)=1.96*nanstd(displacementList_Euc{sInd})/sqrt(length(displacementList_Euc{sInd}));
+    
+    distanceMeans(sInd)=nanmean(distanceList_Euc{sInd});
+    distanceSE(sInd)=1.96*nanstd(distanceList_Euc{sInd})/sqrt(length(displacementList_Euc{sInd}));
+    
+    displacementStateMeans(sInd)=nanmean(displacementListState_Euc{sInd});
+    displacementStateSE(sInd)=1.96*nanstd(displacementListState_Euc{sInd})/sqrt(length(displacementList_Euc{sInd}));
+    
+    distanceStateMeans(sInd)=nanmean(distanceListState_Euc{sInd});
+    distanceStateSE(sInd)=1.96*nanstd(distanceListState_Euc{sInd})/sqrt(length(displacementList_Euc{sInd}));
+end
+
+subjData=[displacementMeans distanceMeans displacementStateMeans distanceStateMeans];
+
+%%
+
+bar(mean(subjData)); hold on
+var_a=std(subjData(:,2)-subjData(:,1))*1.96/sqrt(20);
+var_b=std(subjData(:,4)-subjData(:,3))*1.96/sqrt(20);
+
+ci=std(subjData)*1.96/sqrt(20);
+errorbar(1:4,mean(subjData),ci,'kx','LineWidth',1.5,'CapSize',45,'MarkerEdgeColor','k')
+set(gcf,'Color','w')
+xlim([0.5 4.5])
+xticks(1:4)
+xticklabels({'Transition\newlineDisplacement','Transition\newlineDistance','State\newlineDisplacement','State\newlineDistance'})
+ylabel('Euclidean Distance')
+
+set
+
+f=gcf;
+f.Theme="light";

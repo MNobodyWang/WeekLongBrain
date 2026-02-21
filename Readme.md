@@ -1,4 +1,8 @@
-Week-long data processing guide. This assumes both Python3 and MATLAB are installed and are running on a Linux system.
+Week-long data processing guide. This assumes both Python3 and MATLAB are installed and are running on a Linux system. The environment is included as environment.yaml
+
+Steps 1 through 8 are shown in the Jupyter notebook Main_Driver.ipynb. This is intended to convert "raw" edf files of intracranial recordings into preprocessed markers of network activity.
+
+Matlab files are included to generate the main results of all six figures in the manuscript as Fig1_Generation.m, Fig2_Generation.m, etc. using intermediate data files that are also included in the Data directory. These files are structured as commented sections that show the code to iterate through each participant to extract the needed metrics (which would require data from all 20 participants which is not included here), then a section to load intermediate data from all 20 participants to skip past that step, then the final statistical tests and plotting code to generate the main figures. 
 
 1) Obtain neural recordings in EDF-Plus format. This format can be exported from NATUS systems and likely other commonly used systems. For us, this resulted in one EDF file for each day of data which we placed into a single directory. Denote this directory as
 
@@ -7,7 +11,7 @@ SUBJ_ID: ID code for a single subject
 
 EDFs go into DATA_DIR/SUBJ_ID/EDF/
 
-2) Convert EDF file data into indivudal .mat files for each electrode. Run Extract_Batch.sh after modifying the first few lines for the relevant paths. This should generate a folder:
+2) Convert EDF file data into individual .mat files for each electrode. Run Extract_Batch.sh after modifying the first few lines for the relevant paths. This should generate a folder:
 
 DATA_DIR/SUBJ_ID/ElectrodesRaw
 
@@ -83,7 +87,7 @@ to save the ICA-cleaned region coherence over times in .mat format
 
 10) Identify networks of regions that covary together using RANSAC PCA. Run RandomConsensus_PCA.m block by block, inspecting the plots and deciding on cutoffs for outlier exclusion manually for each subject.
 
-11) Remove time periods involving seizures and networks with significant similarity to seizure network. First, you will need to remove periods of times surrounding seizures. PcaSeizureTrim_EP1109.m gives an example of how we did this, but in general, you will need to figure out how to time register when seizures occur to your dataset. On our dataset, we consistently had a couple minutes break between ``days'' of data so I placed several NaNs between days to represent those breaks. I used those NaNs to register real-world time to the electrode data.
+11) Remove time periods involving seizures and networks with significant similarity to seizure network. First, you will need to remove periods of times surrounding seizures. PcaSeizureTrim_EP1109.m gives an example of how we did this, but in general, you will need to figure out how to time register when seizures occur to your dataset. On our dataset, we consistently had a couple minutes break between days of data so I placed several NaNs between days to represent those breaks. I used those NaNs to register real-world time to the electrode data.
 
 Afterwards, remove networks that show statistically significant similarity to the seizure network. Go to PCA_SeizureNetworkRemoval.m, modify the paths and subject lists, and for each subject, add in which electrodes are part of the seizure network and then run.
 
@@ -94,5 +98,4 @@ Other scripts:
 BinarySegmentationDriver.py: find changepoints in network activations using binary segmentation
 
 RecurrentKOP_SaveState.py: train recurrent neural network/Koopman model on network activations and export both the model variables (network layer weights/Koopman operator) and the Koopman state at each point in time
--koopman_model,test_model.py,state_kop_mdl,recurrent_kop_mdl: helper files containing class definitions. I'm 99% convinced that only the last one is actually needed (former ones I was just using for debugging, but I included all of them in case I accidentally left a dependency somewhere)
-
+-koopman_model,test_model.py,state_kop_mdl,recurrent_kop_mdl: helper files containing class definitions. 

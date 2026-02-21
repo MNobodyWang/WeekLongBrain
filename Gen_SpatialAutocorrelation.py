@@ -18,70 +18,69 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.linear_model import LinearRegression
 
 # %%
-MEG_Dir=sys.argv[1]
-#MEG_Dir="/media/mwang/easystore/Processed_Data/"
-subjID=sys.argv[2]
-recordInd=int(sys.argv[3])
-recordList=glob.glob(MEG_Dir+"/"+subjID+"/Electrode_Trials/*")
 
-readDir=recordList[recordInd]+"/"
+def Gen_SpatialAutocorrelation(MEG_Dir,subjID):
+    recordInd=0
+    recordList=glob.glob(MEG_Dir+"/ElectrodeTrials/"+subjID+"/*")
+    
+    readDir=recordList[recordInd]+"/"
 
-print("Reading from " + readDir)
+    print("Reading from " + readDir)
 
-import os
+    import os
 
-outPath=MEG_Dir+"/"+subjID+"/Trial_Coherence/"
+    outPath=MEG_Dir+"/"+subjID+"/Trial_Coherence/"
 
-if not os.path.exists(outPath):
-	os.makedirs(outPath)
+    if not os.path.exists(outPath):
+        os.makedirs(outPath)
 
-outfile = outPath + "/Spatial_Autocorrelation_Mean.npz"
+    outfile = outPath + "/Spatial_Autocorrelation_Mean.npz"
 
-eI_Data=np.load(MEG_Dir+"/"+subjID+"/electrodeIndexing.npz")
-scanInds=eI_Data["scanInds"]
-	
-eLocData=loadmat("/media/qSTORAGE/homes/mwang/ECOG_Data/"+subjID+"/universalElectrodes_MNI.mat")
-mni_coords=eLocData["mni_electrode_coordinates"]
-eDist=euclidean_distances(mni_coords, mni_coords)
-np.fill_diagonal(eDist,100)
+    eI_Data=np.load(MEG_Dir+"/"+subjID+"/electrodeIndexing.npz")
+    scanInds=eI_Data["scanInds"]
 
-if os.path.exists(outfile):
-	print("Already Done")
-else:
-	numTrials=len(next(os.walk(readDir))[1])
+    eLocData=loadmat(MEG_Dir+subjID+"/universalElectrodes_MNI.mat")
+    mni_coords=eLocData["mni_electrode_coordinates"]
+    eDist=euclidean_distances(mni_coords, mni_coords)
+    np.fill_diagonal(eDist,100)
 
-	annots = hdf5storage.loadmat(readDir+"/Trial_1/FilteredTrial.mat")
-	trialData=np.array(annots['trial_Data'])
-	numSteps=np.size(trialData,axis=1)
+    if os.path.exists(outfile):
+        print("Already Done")
+    else:
+        numTrials=len(next(os.walk(readDir))[1])
 
-	numElectrodes=np.size(scanInds,axis=1)
-	
-	electrodeData=np.zeros([int(numElectrodes),int(numTrials*numSteps)])
+        annots = loadmat(readDir+"/Trial_1/FilteredTrial.mat")
+        trialData=np.array(annots['trial_Data'])
+        numSteps=np.size(trialData,axis=1)
 
-	for tInd in range(0,numTrials):
-		myTrial=tInd
+        numElectrodes=np.size(scanInds,axis=1)
 
-		print("Loading Trial: ",tInd," of ",numTrials)
-		t=time.time()
-		
-		annots = hdf5storage.loadmat(readDir+"/Trial_"+str(myTrial+1)+"/FilteredTrial.mat")
-		trialData=np.array(annots['trial_Data'])
-		tStart=numSteps*tInd
-		tEnd=tStart+numSteps
+        electrodeData=np.zeros([int(numElectrodes),int(numTrials*numSteps)])
 
-		electrodeData[:,tStart:tEnd]=trialData[scanInds[recordInd],:]
-	
-	# Determine spatial auto-correlation of each electrode
-	spatialCoefs=np.zeros([numElectrodes,numElectrodes])
-	
-	for eInd in range(0,numElectrodes):
-		print("Calculating Auto-Correlation for Electrode: "+str(eInd))
-		eMask=eDist[eInd,:]<0.02
+        for tInd in range(0,numTrials):
+            myTrial=tInd
 
-		if np.sum(eMask)>0:
-			aveSignal=np.mean(electrodeData[eMask,:],axis=0)
-			#reg = LinearRegression().fit(electrodeData[eMask,:], electrodeData[eInd,:])
-			reg = LinearRegression().fit(aveSignal.reshape(1,-1).T, electrodeData[eInd,:])
-			spatialCoefs[eInd,eMask]=reg.coef_
+            # print("Loading Trial: ",tInd," of ",numTrials)
+            t=time.time()
 
-	np.savez(outfile,spatialCoefs=spatialCoefs)
+            annots = loadmat(readDir+"/Trial_"+str(myTrial+1)+"/FilteredTrial.mat")
+            trialData=np.array(annots['trial_Data'])
+            tStart=numSteps*tInd
+            tEnd=tStart+numSteps
+
+            electrodeData[:,tStart:tEnd]=trialData[scanInds[recordInd],:]
+
+        # Determine spatial auto-correlation of each electrode
+        spatialCoefs=np.zeros([numElectrodes,numElectrodes])
+
+        for eInd in range(0,numElectrodes):
+            # print("Calculating Auto-Correlation for Electrode: "+str(eInd))
+            eMask=eDist[eInd,:]<0.02
+
+            if np.sum(eMask)>0:
+                aveSignal=np.mean(electrodeData[eMask,:],axis=0)
+                #reg = LinearRegression().fit(electrodeData[eMask,:], electrodeData[eInd,:])
+                reg = LinearRegression().fit(aveSignal.reshape(1,-1).T, electrodeData[eInd,:])
+                spatialCoefs[eInd,eMask]=reg.coef_
+
+        np.savez(outfile,spatialCoefs=spatialCoefs)

@@ -9,67 +9,63 @@ import numpy as np
 import sys
 from scipy.io import savemat
 
-#MEG_Dir="/media/mwang/MBW_Drive/"
-#MEG_Dir="/media/qSTORAGE/homes/mwang/ECOG_Data/"
-MEG_Dir="/media/ghumanlab/Passport/ECOG_Copies/"
-writeDir=MEG_Dir
+def ElectrodeIndexer(MEG_Dir,subjID):
+    writeDir=MEG_Dir
 
-#writeDir="/media/mwang/easystore/Processed_Data/"
-subjID=sys.argv[1]
-#scanList = [x.strip() for x in open(MEG_Dir+"/"+subjID+"/scanList.txt","r").readlines()]
-scanList=glob.glob(MEG_Dir+subjID+"/EDF/*")
-electrodeList=[]
+    #scanList = [x.strip() for x in open(MEG_Dir+"/"+subjID+"/scanList.txt","r").readlines()]
+    scanList=glob.glob(MEG_Dir+subjID+"/EDF/*")
+    electrodeList=[]
 
-def return_indices_of_a(a, b):
-  b_set = set(b)
-  return [i for i, v in enumerate(a) if v in b_set]
+    def return_indices_of_a(a, b):
+      b_set = set(b)
+      return [i for i, v in enumerate(a) if v in b_set]
 
-for scan in scanList:
-	print("Getting Channel Names for Scan: "+scan)
-	#myFileName=glob.glob(MEG_Dir+subjID+"/EDFs/*"+scan+"*")
-	#myFileName=glob.glob(MEG_Dir+subjID+"/*"+scan+"*")
-	#data=mne.io.read_raw_edf(myFileName[0])
-	#channelNames=data.info.ch_names
-	channelNames=pyedflib.EdfReader(scan).getSignalLabels()
-	
-	ekgInds=[i for i, s in enumerate(channelNames) if 'FP1' in s]
-	
-	if not(ekgInds):
-		ekgInds=[i for i, s in enumerate(channelNames) if 'EKG' in s]
-	if not(ekgInds):
-		ekgInds=[i for i, s in enumerate(channelNames) if 'C113' in s]
-	if not(ekgInds):
-		ekgInds=[i for i, s in enumerate(channelNames) if 'C127' in s]
-	if not(ekgInds):
-		ekgInds=[len(channelNames)]
-	usedChannelNames=[x.upper() for x in channelNames[0:ekgInds[0]]]
-	electrodeList.append(usedChannelNames)
+    for scan in scanList:
+        print("Getting Channel Names for Scan: "+scan)
+        #myFileName=glob.glob(MEG_Dir+subjID+"/EDFs/*"+scan+"*")
+        #myFileName=glob.glob(MEG_Dir+subjID+"/*"+scan+"*")
+        #data=mne.io.read_raw_edf(myFileName[0])
+        #channelNames=data.info.ch_names
+        channelNames=pyedflib.EdfReader(scan).getSignalLabels()
 
-universalElectrodes=electrodeList[0]
+        ekgInds=[i for i, s in enumerate(channelNames) if 'FP1' in s]
 
-for elecs in electrodeList[1:]:
-	matchInds=return_indices_of_a(universalElectrodes,elecs)
+        if not(ekgInds):
+            ekgInds=[i for i, s in enumerate(channelNames) if 'EKG' in s]
+        if not(ekgInds):
+            ekgInds=[i for i, s in enumerate(channelNames) if 'C113' in s]
+        if not(ekgInds):
+            ekgInds=[i for i, s in enumerate(channelNames) if 'C127' in s]
+        if not(ekgInds):
+            ekgInds=[len(channelNames)]
+        usedChannelNames=[x.upper() for x in channelNames[0:ekgInds[0]]]
+        electrodeList.append(usedChannelNames)
 
-	universalElectrodes=[universalElectrodes[i] for i in matchInds]
+    universalElectrodes=electrodeList[0]
 
-eventInds=[i for i, s in enumerate(universalElectrodes) if 'PATIENT EVENT' in s]
-if eventInds:
-	del universalElectrodes[eventInds[0]]
+    for elecs in electrodeList[1:]:
+        matchInds=return_indices_of_a(universalElectrodes,elecs)
 
-scanInds=[]
+        universalElectrodes=[universalElectrodes[i] for i in matchInds]
 
-for elecs in electrodeList:
-	matchInds=return_indices_of_a(elecs,universalElectrodes)
+    eventInds=[i for i, s in enumerate(universalElectrodes) if 'PATIENT EVENT' in s]
+    if eventInds:
+        del universalElectrodes[eventInds[0]]
 
-	scanInds.append(matchInds)
+    scanInds=[]
 
-my_shelf=shelve.open(MEG_Dir+"/"+subjID+"/electrodeIndexing_shelve.out",'n')
-my_shelf['universalElectrodes']=universalElectrodes
-my_shelf['scanInds']=scanInds
-my_shelf['scanList']=scanList
-my_shelf.close()
+    for elecs in electrodeList:
+        matchInds=return_indices_of_a(elecs,universalElectrodes)
 
-mdic={'universalElectrodes':universalElectrodes,'scanInds':scanInds,'scanList':scanList}
-savemat(MEG_Dir+"/"+subjID+"/electrodeIndexing.mat",mdic)
+        scanInds.append(matchInds)
 
-np.savez(writeDir+"/"+subjID+"/electrodeIndexing.npz",scanInds=scanInds)
+    my_shelf=shelve.open(MEG_Dir+"/"+subjID+"/electrodeIndexing_shelve.out",'n')
+    my_shelf['universalElectrodes']=universalElectrodes
+    my_shelf['scanInds']=scanInds
+    my_shelf['scanList']=scanList
+    my_shelf.close()
+
+    mdic={'universalElectrodes':universalElectrodes,'scanInds':scanInds,'scanList':scanList}
+    savemat(MEG_Dir+"/"+subjID+"/electrodeIndexing.mat",mdic)
+
+    np.savez(writeDir+"/"+subjID+"/electrodeIndexing.npz",scanInds=scanInds)

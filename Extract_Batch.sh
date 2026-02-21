@@ -1,19 +1,14 @@
 #!/bin/bash
-# Batch extract electrodes from all edfs found in folder
+# Submits slurm batches to extract EDF files
 # Created on 20200804 by Max B Wang
 
-# This folder should contain individual subfolders, each one corresponding to a single subject
-Data_Dir=/media/qSTORAGE/homes/mwang/ECOG_Data/
+EDF_Dir="$1"
+subjID="$2"
 
-# Name of the folder belong to the subject you want to process
-subjID="EP1174"
-
-numEDFs=`ls "${MEG_Dir}/${subjID}/EDF/" | wc -l`
-
-mkdir Logs
+numEDFs=`ls "${EDF_Dir}/${subjID}/EDF/" | wc -l`
 
 for (( i=0; i<${numEDFs}; i++)); do
 	
-	python3 ExtractElectrodes.py ${Data_Dir} ${subjID} ${i} >> "Logs/Extract_${subjID}_${i}.txt" &
+	python3 /home/maxwell.wang/WeekScripts/TestRun/WeekLongBrain-main/ExtractElectrodes.py ${EDF_Dir} ${subjID} ${i} >> "Logs/Extract_${subjID}_${i}.txt" &
 	
 done
