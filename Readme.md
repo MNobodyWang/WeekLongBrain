@@ -2,7 +2,7 @@ Week-long data processing guide. This assumes both Python3 and MATLAB are instal
 
 Steps 1 through 8 are shown in the Jupyter notebook Main_Driver.ipynb. This is intended to convert "raw" edf files of intracranial recordings into preprocessed markers of network activity.
 
-Matlab files are included to generate the main results of all six figures in the manuscript as Fig1_Generation.m, Fig2_Generation.m, etc. using intermediate data files that are also included in the Data directory. These files are structured as commented sections that show the code to iterate through each participant to extract the needed metrics (which would require data from all 20 participants which is not included here), then a section to load intermediate data from all 20 participants to skip past that step, then the final statistical tests and plotting code to generate the main figures. 
+Matlab files are included to generate the main results of all six figures in the manuscript as Fig1_Generation.m, Fig2_Generation.m, etc. using intermediate data files that are also included in the Data directory (unzip first). These files are structured as commented sections that show the code to iterate through each participant to extract the needed metrics (which would require data from all 20 participants which is not included here), then a section to load intermediate data from all 20 participants to skip past that step, then the final statistical tests and plotting code to generate the main figures. 
 
 1) Obtain neural recordings in EDF-Plus format. This format can be exported from NATUS systems and likely other commonly used systems. For us, this resulted in one EDF file for each day of data which we placed into a single directory. Denote this directory as
 
